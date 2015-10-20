@@ -67,9 +67,9 @@ print (p_beers)
 c_beers_how = data['S2AQ5B'].value_counts(sort=False, dropna = False)
 print ("Distribution of HOW OFTEN DRANK BEERS IN LAST 12 MONTHS")
 print (c_beers_how)
-c_beers_how = data['S2AQ5B'].value_counts(sort=False, normalize = True, dropna = False)
+p_beers_how = data['S2AQ5B'].value_counts(sort=False, normalize = True, dropna = False)
 print ("Distribution of HOW OFTEN DRANK BEERS IN LAST 12 MONTHS [%]")
-print (c_beers_how)
+print (p_beers_how)
 
 
 # ----------------------------WINE------------------------------------------
@@ -83,9 +83,9 @@ print (p_wine)
 c_wine_how = data['S2AQ6B'].value_counts(sort=False, dropna = False)
 print ("Distribution of HOW OFTEN DRANK WINE IN LAST 12 MONTHS")
 print (c_wine_how)
-c_wine_how = data['S2AQ6B'].value_counts(sort=False, normalize = True, dropna = False)
+p_wine_how = data['S2AQ6B'].value_counts(sort=False, normalize = True, dropna = False)
 print ("Distribution of HOW OFTEN DRANK WINE IN LAST 12 MONTHS [%]")
-print (c_wine_how)
+print (p_wine_how)
 
 
 # ----------------------------LIQUOR------------------------------------------
@@ -99,7 +99,7 @@ print (p_liquor)
 c_liquor_how = data['S2AQ7B'].value_counts(sort=False, dropna = False)
 print ("Distribution of HOW OFTEN DRANK LIQUOR IN LAST 12 MONTHS")
 print (c_liquor_how)
-c_liquor_how = data['S2AQ7B'].value_counts(sort=False, normalize = True, dropna = False)
+p_liquor_how = data['S2AQ7B'].value_counts(sort=False, normalize = True, dropna = False)
 print ("Distribution of HOW OFTEN DRANK LIQUOR IN LAST 12 MONTHS [%]")
-print (c_liquor_how)
+print (p_liquor_how)
 
