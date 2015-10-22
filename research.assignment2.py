@@ -114,7 +114,7 @@ data['S2AQ7B'] = data['S2AQ7B'].replace(99, numpy.nan)    # unknown
 
 # In the 'A' series of data, it seems that it would be more logical to have 
 # a different order of dummy codes. Now, '0' means 'Don'k drik at all', 
-# '1' means 'Yes, I Drunk XXX in the last 12 months' and '0' means 'No, I'm 
+# '1' means 'Yes, I Drunk XXX in the last 12 months' and '2' means 'No, I'm 
 # not abstainer but I did not drink XXX in thelast 12 months'
 # I would prefer a distribution like:
 # '0' - Abstainer
@@ -200,8 +200,8 @@ wine = pandas.DataFrame(data = data['S2AQ6A'].value_counts(sort=False,
                         dropna = False), columns = ['frequency'])
 wine['percent'] = data['S2AQ6A'].value_counts(sort=False, 
                         normalize = True, dropna = False)*100
-wine['cumulative_frequency'] = liquor['frequency'].cumsum()
-wine['cumulative_percent'] = liquor['percent'].cumsum()
+wine['cumulative_frequency'] = wine['frequency'].cumsum()
+wine['cumulative_percent'] = wine['percent'].cumsum()
 
 wine_how = pandas.DataFrame(data = data['S2AQ6B'].value_counts(sort=False, 
                              dropna = False), columns = ['frequency'])
@@ -233,3 +233,7 @@ print ("Distribution of DRANK ANY COOLERS IN LAST 12 MONTHS")
 print (coolers)
 print ("Distribution of HOW OFTEN DRANK COOLERS IN LAST 12 MONTHS")
 print (coolers_how)
+print ("Distribution of DRANK ANY BEERS IN LAST 12 MONTHS")
+print (beers)
+print ("Distribution of HOW OFTEN DRANK BEERS COOLERS IN LAST 12 MONTHS")
+print (beers_how)
