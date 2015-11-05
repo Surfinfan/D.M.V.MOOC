@@ -48,7 +48,7 @@ data = pandas.read_csv('../DataSet/nesarc_pds.csv', low_memory=False)
 # in a new DataFrame Sub that will contain all the data that I need
 
 sub = pandas.DataFrame()
-sub['countries']     = data['S1Q1E'].convert_objects(convert_numeric = True)
+sub['country_code']  = data['S1Q1E'].convert_objects(convert_numeric = True)
 sub['coolers_any']   = data['S2AQ4A'].convert_objects(convert_numeric = True)
 sub['coolers_often'] = data['S2AQ4B'].convert_objects(convert_numeric = True)
 sub['coolers_num']   = data['S2AQ4D'].convert_objects(convert_numeric = True)
@@ -63,7 +63,7 @@ sub['liquor_often']  = data['S2AQ7B'].convert_objects(convert_numeric = True)
 sub['liquor_num']    = data['S2AQ7D'].convert_objects(convert_numeric = True)
 
 # Chicano and Mexican-American is the same thing actually
-sub['countries']     = sub['countries'].replace(9, 36)      
+sub['country_code']  = sub['country_code'].replace(9, 36)      
 
 
 # Let's create a new category [0] for people that don't drink at all
@@ -156,8 +156,8 @@ sub['liquor_num']  = sub.apply(lambda row:abstainer_liquor_num(row), axis = 1)
 
 
 # Let's put all data with no information into NaN too
-sub['countries']     = sub['countries'].replace(98, numpy.nan)      #other
-sub['countries']     = sub['countries'].replace(99, numpy.nan)      # unknown
+sub['country_code']     = sub['country_code'].replace(98, numpy.nan)      #other
+sub['country_code']     = sub['country_code'].replace(99, numpy.nan)      # unknown
 sub['coolers_any']   = sub['coolers_any'].replace(9, numpy.nan)    # unknown
 sub['coolers_often'] = sub['coolers_often'].replace(99, numpy.nan)    # unknown
 sub['coolers_num']   = sub['coolers_num'].replace(99, numpy.nan)    # unknown
@@ -264,9 +264,9 @@ sub['how_many_liquor']  =  sub['days_drinking_liquor'] * sub['liquor_num']
 
 
 #----------------------------COUNTRIES OF ORIGIN-------------------------------
-countries = pandas.DataFrame(data = sub['countries'].value_counts(sort=False, 
+countries = pandas.DataFrame(data = sub['country_code'].value_counts(sort=False, 
                              dropna = False), columns = ['frequency'])
-countries['percent'] = sub['countries'].value_counts(sort=False, 
+countries['percent'] = sub['country_code'].value_counts(sort=False, 
                              normalize = True, dropna = False)*100
 countries['cumulative_frequency'] = countries['frequency'].cumsum()
 countries['cumulative_percent'] = countries['percent'].cumsum()
@@ -384,7 +384,6 @@ print (desc_quant)
 # First graphic: Distribution of individuals per country of origin
 # I prefer to use name of countries-origin instead of codes
 
-sub['countries'] = sub['countries'].astype('category').dropna()
 country_list = ['Afro-American', 
     'African',
     'Native American',
@@ -442,15 +441,16 @@ country_list = ['Afro-American',
     'Middle Eastern',
     'Pacific Islander',
     'Other Spanish']
-
-sub['countries'] = sub['countries'].cat.rename_categories(country_list)
+    
+sub['country_name'] = sub['country_code'].astype('category').dropna()
+sub['country_name'] = sub['country_name'].cat.rename_categories(country_list)
 
 # I get the correct order to display in the graphic (from more to less)
-country_order = pandas.DataFrame(data = sub['countries'].value_counts(sort=False, 
+country_order = pandas.DataFrame(data = sub['country_code'].value_counts(sort=False, 
                              dropna = True), columns = ['frequency'])
 country_order['name'] = country_list
 country_order = country_order.sort(columns = 'frequency', ascending = False)
-sns.countplot(y='countries', data = sub.dropna(), order=country_order['name'])
+sns.countplot(y='country_name', data = sub.dropna(), order=country_order['name'])
 
 plt.title('Country-origin Distribution')
 plt.ylabel('Country')
@@ -498,5 +498,146 @@ plt.close()
 # (10, 60]  drinks - big drinker
 # > 60      drinks - heavy drinker
 
+sub['coolershowmany_group'] = pandas.cut(sub.how_many_coolers, 
+                            [-0.1,0,4,10,60,sub.how_many_coolers.max()])
+sub['beershowmany_group'] = pandas.cut(sub.how_many_beers, 
+                            [-0.1,0,4,10,60,sub.how_many_beers.max()])
+sub['winehowmany_group'] = pandas.cut(sub.how_many_wine, 
+                            [-0.1,0,4,10,60,sub.how_many_wine.max()])
+sub['liquorhowmany_group'] = pandas.cut(sub.how_many_liquor, 
+                            [-0.1,0,4,10,60,sub.how_many_liquor.max()])
+
+
+# Let's see them as groups, but let's try sopme subplotting
+
+drinks = ['coolers', 'beers', 'wine', 'liquor']
+fig, our_axes = plt.subplots(nrows=2, ncols=2, figsize=(15, 15), sharey=True)
+drinks_axes = [ax for ax_row in our_axes for ax in ax_row]      
+
+for i, drink in enumerate(drinks):
+    current_ax = drinks_axes[i]
+    
+    current_variable = drink+'howmany_group'
+    #x_axis = current_drink_data.values.categories
+    sns.countplot(x=current_variable, data = sub, ax = current_ax)
+    current_ax.set_title(drink)         # Give our Axes a unique title
+    current_ax.set_ylabel("#individuals")
+    current_ax.set_xlabel("How many drinks ("+drink+") at month")
+
+fig.suptitle('How many drinks a month per type of drink', fontsize=22)
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized()
+plt.savefig("figure4_Groups_of_how_many_drinks_a_month")
+plt.close() 
+
+
+# --------------------------------------------------------------------------
+# Now some cross-variables plots
+
+# First let's explore the question:
+# how country of origin influentiate in abstainers?
+
+# Abstainers are considered in all '_any' variables, codede as '0'
+
+recodeAbs = {0:1, 1:0, 2:0}
+sub['abstainers']     = sub['coolers_any'].map(recodeAbs)
+sub['country_code_a'] = sub['country_code']*sub['abstainers']
+# Lets's get some order
+countries_total       = sub['country_code'].value_counts(sort=False).sort_index()
+countries_abstainer   = sub['country_code_a'].value_counts(sort=False).sort_index()
+countries_abstainer   = countries_abstainer[1:]
+abstainer_order       = pandas.DataFrame(countries_abstainer/countries_total,
+                                         columns=['abstainers_percent'])
+abstainer_order['name'] = country_list
+abstainer_order       = abstainer_order.sort(columns = 'abstainers_percent',
+                                             ascending = False)
+sns.factorplot(y='country_name', x='abstainers', data=sub, kind='bar', ci=None,
+               order = abstainer_order['name'])
+plt.title('Abstainers by country of origin')
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized()
+plt.savefig("figure5_abstainers_by_country")
+plt.close()               
+
+
+# Another question: how country of origin influentiate consuming each type 
+# of drink
+
+# Let's remap the '2' in the '_any' variables to 1 to get the info we want 
+# to study, and do the same process to each type of drinking
+
+recodeDrink = {0:0, 1:0, 2:1}
+sub['cooler_drinkers']    = sub['coolers_any'].map(recodeDrink)
+sub['beer_drinkers']      = sub['beers_any'].map(recodeDrink)
+sub['wine_drinkers']      = sub['wine_any'].map(recodeDrink)
+sub['liquor_drinkers']    = sub['liquor_any'].map(recodeDrink)
+sub['country_code_co']    = sub['country_code']*sub['cooler_drinkers']
+sub['country_code_be']    = sub['country_code']*sub['beer_drinkers']
+sub['country_code_wi']    = sub['country_code']*sub['wine_drinkers']
+sub['country_code_li']    = sub['country_code']*sub['liquor_drinkers']
+countries_cooler_drinkers = sub['country_code_co'].value_counts(sort=False).sort_index()
+countries_cooler_drinkers = countries_cooler_drinkers[1:]
+countries_beer_drinkers   = sub['country_code_be'].value_counts(sort=False).sort_index()
+countries_beer_drinkers   = countries_beer_drinkers[1:]
+countries_wine_drinkers   = sub['country_code_wi'].value_counts(sort=False).sort_index()
+countries_wine_drinkers   = countries_wine_drinkers[1:]
+countries_liquor_drinkers = sub['country_code_li'].value_counts(sort=False).sort_index()
+countries_liquor_drinkers = countries_liquor_drinkers[1:]
+cooler_drinkers_order     = pandas.DataFrame(countries_cooler_drinkers/countries_total,
+                                  columns=['cooler_drinkers_percent'])
+beer_drinkers_order       = pandas.DataFrame(countries_beer_drinkers/countries_total,
+                                  columns=['beer_drinkers_percent'])
+wine_drinkers_order       = pandas.DataFrame(countries_wine_drinkers/countries_total,
+                                  columns=['wine_drinkers_percent'])
+liquor_drinkers_order     = pandas.DataFrame(countries_liquor_drinkers/countries_total,
+                                  columns=['liquor_drinkers_percent'])
+cooler_drinkers_order['name'] = country_list                                
+beer_drinkers_order['name'] = country_list                                
+wine_drinkers_order['name'] = country_list                                
+liquor_drinkers_order['name'] = country_list                                
+cooler_drinkers_order     = cooler_drinkers_order.sort(columns = 'cooler_drinkers_percent',
+                                             ascending = False)
+beer_drinkers_order       = beer_drinkers_order.sort(columns = 'beer_drinkers_percent',
+                                             ascending = False)
+wine_drinkers_order       = wine_drinkers_order.sort(columns = 'wine_drinkers_percent',
+                                             ascending = False)
+liquor_drinkers_order     = liquor_drinkers_order.sort(columns = 'liquor_drinkers_percent',
+                                             ascending = False)
+
+
+sns.factorplot(y='country_name', x='cooler_drinkers', data=sub, kind='bar', ci=None,
+               order = cooler_drinkers_order['name'])
+plt.title('Cooler drinkers by country of origin')
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized()
+plt.savefig("figure6_cooler_drinkers_by_country")
+plt.close()                                                 
+                                             
+                                  
+sns.factorplot(y='country_name', x='beer_drinkers', data=sub, kind='bar', ci=None,
+               order = beer_drinkers_order['name'])
+plt.title('Beer drinkers by country of origin')
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized()
+plt.savefig("figure7_beer_drinkers_by_country")
+plt.close()                                        
+                                
+                                  
+sns.factorplot(y='country_name', x='wine_drinkers', data=sub, kind='bar', ci=None,
+               order = wine_drinkers_order['name'])
+plt.title('Wine drinkers by country of origin')
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized()
+plt.savefig("figure8_wine_drinkers_by_country")
+plt.close()      
+
+
+sns.factorplot(y='country_name', x='liquor_drinkers', data=sub, kind='bar', ci=None,
+               order = liquor_drinkers_order['name'])
+plt.title('Liquor drinkers by country of origin')
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized()
+plt.savefig("figure9_liquor_drinkers_by_country")
+plt.close()      
 
 
