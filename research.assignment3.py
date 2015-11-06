@@ -450,7 +450,7 @@ country_order = pandas.DataFrame(data = sub['country_code'].value_counts(sort=Fa
                              dropna = True), columns = ['frequency'])
 country_order['name'] = country_list
 country_order = country_order.sort(columns = 'frequency', ascending = False)
-sns.countplot(y='country_name', data = sub.dropna(), order=country_order['name'])
+sns.countplot(y='country_name', data = sub, order=country_order['name'])
 
 plt.title('Country-origin Distribution')
 plt.ylabel('Country')
